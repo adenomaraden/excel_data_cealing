@@ -1,485 +1,141 @@
-# excel_data_cealing
+# 🚴‍♂️ Bike Buyers Data Analysis (Excel Project)
 
+This project explores a dataset of **bike buyers** using Excel.  
+The goal is to analyze customer demographics, lifestyle factors, and their likelihood of purchasing a bike.  
 
-
-# 📊 Layoffs Data Exploration with SQL
-
-This project explores global layoffs data using SQL.  
-The goal is to analyze patterns, trends, and insights around layoffs across companies, industries, countries, and time periods.
+The project includes **data cleaning, transformation, pivot tables, and dashboards** to summarize insights in an interactive way.
 
 ---
 
 ## 📑 Table of Contents
 
-1. [Extended Description](#-extended-description)  
-2. [Features](#-features)  
-3. [Dataset](#-dataset)  
-4. [Data Cleaning & Deduplication](#-data-cleaning--deduplication-sql)  
-5. [SQL Queries Breakdown](#-sql-queries-breakdown)  
-6. [Insights You Can Extract](#-insights-you-can-extract)  
-7. [Tech Stack](#-tech-stack)  
-8. [Example Output](#-example-output-optional)  
+1. [Project Overview](#-project-overview)  
+2. [Dataset](#-dataset)  
+3. [Data Cleaning](#-data-cleaning)  
+4. [Analysis](#-analysis)  
+5. [Pivot Tables](#-pivot-tables)  
+6. [Dashboard](#-dashboard)  
+7. [Insights](#-insights)  
+8. [Tech Stack](#-tech-stack)  
 9. [How to Use](#-how-to-use)  
 10. [Future Improvements](#-future-improvements)  
-11. [Contributing](#-contributing)  
-12. [License](#-license)  
+11. [License](#-license)  
 
 ---
 
-## 📖 Extended Description
+## 📖 Project Overview
 
-The **global wave of layoffs**, particularly in the technology and startup ecosystem, has become a key topic of analysis for economists, investors, and data enthusiasts.  
-This project provides a structured approach to **understanding layoffs data** using SQL, highlighting not only the raw numbers but also **contextual insights** about industries, geographies, and company stages.
+The **Bike Buyers dataset** contains customer demographic and lifestyle data, with a target column `Purchased Bike`.  
 
-The workflow follows a logical progression:  
-
-1. **Data Cleaning** → Preparing the raw dataset by handling duplicates, formatting dates, trimming company names, and addressing missing values.  
-2. **Exploration** → Running basic queries to understand the scale of layoffs (e.g., largest single events, companies with complete workforce cuts).  
-3. **Aggregation** → Summarizing layoffs by year, industry, location, country, and stage to uncover macro trends.  
-4. **Advanced Analytics** → Using window functions, rolling totals, and ranking logic to uncover deeper insights such as top companies per year or cumulative monthly layoffs.  
-
-This project demonstrates how SQL can be used not just for CRUD operations but also for **business intelligence and storytelling with data**.  
-It is an excellent resource for:  
-
-- **SQL learners** → Practice with real-world style queries (from beginner to advanced).  
-- **Data analysts** → Explore patterns, build narratives, and prepare for visualization.  
-- **Researchers / HR professionals** → Understand how workforce reductions vary by sector and geography.  
-
-Ultimately, this project transforms a raw dataset into **meaningful insights** that could feed dashboards, reports, or even predictive models for future workforce planning.
-
----
-
-## 🚀 Features
-
-- **Data Exploration** → Preview and explore the dataset with `SELECT *`.  
-- **Data Cleaning** → Remove duplicates, standardize fields, and fix data types.  
-- **Easier Queries** →  
-  - Find maximum layoffs  
-  - Identify companies with 100% layoffs  
-  - Check percentages and funding details  
-- **Aggregated Insights** →  
-  - Top companies, locations, countries, and industries by layoffs  
-  - Year-wise and stage-wise summaries  
-- **Advanced Analysis** →  
-  - Rolling totals of layoffs by month  
-  - CTEs for cumulative layoffs  
-  - Ranking companies with most layoffs per year (Top 3 each year)  
+The main objectives are to:  
+- Understand customer segments most likely to purchase a bike.  
+- Explore how **income, age, marital status, education, occupation, commute distance, and region** affect purchase behavior.  
+- Build a professional **Excel dashboard** for interactive exploration.  
 
 ---
 
 ## 📂 Dataset
 
-The dataset is stored in a table called **`standralising`**, containing:
+The dataset includes the following columns:
 
-- `company`  
-- `industry`  
-- `total_laid_off`  
-- `percentage_laid_off`  
-- `location`  
-- `country`  
-- `date`  
-- `stage`  
-- `funds_raised`  
-
----
-
-## 🧼 Data Cleaning & Deduplication (SQL)
-
-### 1) Create a staging table
-
-```sql
-CREATE TABLE `standralising` LIKE layoffs;
-INSERT `standralising`
-SELECT * FROM layoffs;
-2) Inspect potential duplicates
-sql
-Copy code
-SELECT company, industry, total_laid_off, `date`,
-       ROW_NUMBER() OVER (
-         PARTITION BY company, industry, total_laid_off, `date`
-         ORDER BY company
-       ) AS row_num
-FROM standralising;
-3) Remove duplicate rows
-sql
-Copy code
-SET SQL_SAFE_UPDATES = 0;
-
-DELETE s
-FROM standralising AS s
-JOIN (
-  SELECT company, industry, total_laid_off, `date`, percentage_laid_off, stage, country,
-         ROW_NUMBER() OVER (
-           PARTITION BY company, industry, total_laid_off, `date`
-           ORDER BY company
-         ) AS row_num
-  FROM standralising
-) AS r
-  ON s.company = r.company
- AND s.industry = r.industry
- AND s.total_laid_off = r.total_laid_off
- AND s.`date` = r.`date`
-WHERE r.row_num > 1;
-
-SET SQL_SAFE_UPDATES = 1;
-4) Normalize text fields
-sql
-Copy code
-UPDATE standralising
-SET company = TRIM(company);
-5) Convert date strings to DATE type
-sql
-Copy code
-UPDATE standralising
-SET `date` = STR_TO_DATE(`date`, '%m/%d/%Y');
-6) Identify missing values
-sql
-Copy code
-SELECT *
-FROM standralising
-WHERE total_laid_off IS NULL
-   OR funds_raised IS NULL
-   OR industry IS NULL
-   OR `date` IS NULL;
-🛠️ SQL Queries Breakdown
-🔹 Easier Queries
-sql
-Copy code
--- Maximum layoffs
-SELECT MAX(total_laid_off) FROM standralising;
-
--- Companies with 100% layoffs
-SELECT * FROM standralising WHERE percentage_laid_off = 1;
-🔹 Aggregated Insights
-sql
-Copy code
--- Total layoffs by industry
-SELECT industry, SUM(total_laid_off) AS total_laid_off
-FROM standralising
-GROUP BY industry
-ORDER BY total_laid_off DESC;
-
--- Total layoffs by country
-SELECT country, SUM(total_laid_off) AS total_laid_off
-FROM standralising
-GROUP BY country
-ORDER BY total_laid_off DESC;
-🔹 Advanced Queries
-sql
-Copy code
--- Rolling total of layoffs per month
-WITH DATE_CTE AS 
-(
-  SELECT SUBSTRING(date,1,7) AS dates, SUM(total_laid_off) AS total_laid_off
-  FROM standralising
-  GROUP BY dates
-  ORDER BY dates ASC
-)
-SELECT dates, SUM(total_laid_off) OVER (ORDER BY dates ASC) AS rolling_total_layoffs
-FROM DATE_CTE
-ORDER BY dates ASC;
-📈 Insights You Can Extract
-📌 Largest single-day layoffs by company
-
-📌 Industries and countries most affected
-
-📌 Year-over-year layoff trends
-
-📌 Top 3 companies per year with the most layoffs
-
-📌 Rolling and cumulative totals of layoffs
-
-🧑‍💻 Tech Stack
-SQL (MySQL / PostgreSQL compatible)
-
-Relational Database to store and query data
-
-Queries structured for exploration + insights
-
-📸 Example Output (Optional)
-Add charts or screenshots of query results / dashboards here for better presentation.
-
-🌟 How to Use
-Clone this repo:
-
-bash
-Copy code
-git clone https://github.com/your-username/layoffs-sql-analysis.git
-Import the dataset into your SQL database.
-
-Run queries in your favorite SQL client (MySQL Workbench, DBeaver, pgAdmin, etc.).
-
-Explore, analyze, and derive insights!
-
-📌 Future Improvements
-📊 Add visualizations (Tableau, Power BI, or Python)
-
-⚡ Automate ETL pipeline for updated data
-
-🤖 Extend to predictive analysis with ML models
-
-🤝 Contributing
-Pull requests are welcome!
-For major changes, please open an issue first to discuss what you’d like to change.
-
-📜 License
-This project is licensed under the MIT License.
-
-yaml
-Copy code
+- `ID` – Unique identifier  
+- `Marital Status` – Single or Married  
+- `Gender` – Male/Female  
+- `Income` – Annual income of the customer  
+- `Children` – Number of children  
+- `Education` – Highest education attained  
+- `Occupation` – Type of work (Professional, Clerical, Skilled Manual, etc.)  
+- `Home Owner` – Yes/No  
+- `Cars` – Number of cars owned  
+- `Commute Distance` – Distance to work (e.g., 0-1 Miles, 5-10 Miles)  
+- `Region` – Geographic region (Europe, Pacific, North America)  
+- `Age` – Age of the customer  
+- `Purchased Bike` – Target variable (Yes/No)  
 
 ---
 
-✅ This version has a **much stronger extended description** that explains the *why*, *how*, and *value* of your project — making it stand out on GitHub.  
+## 🧼 Data Cleaning
 
-Do you also want me to create a **short project tagline** (1–2 lines) you can put under the title so your repo looks even more polished when people first land on it?
-
-
-
-
-
-
-You said:
-Excel Project Dataset (6)
-
-Unable to display visualization
-and make this my read me
-
-
-ChatGPT said:
-Great 👍 you want the final README.md to be ready for your repo.
-I’ll merge everything we worked on:
-
-Extended description
-
-Data cleaning & deduplication steps
-
-SQL analysis queries
-
-Insights
-
-Professional structure with icons + table of contents
-
-Here’s your final README.md:
-
-markdown
-Copy code
-# 📊 Layoffs Data Exploration with SQL
-
-This project explores global layoffs data using SQL.  
-The goal is to analyze patterns, trends, and insights around layoffs across companies, industries, countries, and time periods.
+Performed in the **working sheet**:  
+- Removed duplicate records.  
+- Standardized categorical fields (e.g., “M/F” → “Male/Female”).  
+- Formatted columns for **numeric values and dates**.  
+- Created calculated columns for age grouping and commute categories.  
 
 ---
 
-## 📑 Table of Contents
+## 📊 Analysis
 
-1. [Extended Description](#-extended-description)  
-2. [Features](#-features)  
-3. [Dataset](#-dataset)  
-4. [Data Cleaning & Deduplication](#-data-cleaning--deduplication-sql)  
-5. [SQL Queries Breakdown](#-sql-queries-breakdown)  
-6. [Insights You Can Extract](#-insights-you-can-extract)  
-7. [Tech Stack](#-tech-stack)  
-8. [Example Output](#-example-output-optional)  
-9. [How to Use](#-how-to-use)  
-10. [Future Improvements](#-future-improvements)  
-11. [Contributing](#-contributing)  
-12. [License](#-license)  
+Some of the questions explored:  
+
+- What is the **average income** of bike buyers vs non-buyers?  
+- Does **marital status** affect bike purchase decisions?  
+- Which **age groups** are more likely to purchase bikes?  
+- How does **commute distance** correlate with bike purchases?  
+- Do **region and occupation** influence purchase trends?  
 
 ---
 
-## 📖 Extended Description
+## 📑 Pivot Tables
 
-The **global wave of layoffs**, particularly in the technology and startup ecosystem, has become a key topic of analysis for economists, investors, and data enthusiasts.  
-This project provides a structured approach to **understanding layoffs data** using SQL, highlighting not only the raw numbers but also **contextual insights** about industries, geographies, and company stages.
-
-The workflow follows a logical progression:  
-
-1. **Data Cleaning** → Preparing the raw dataset by handling duplicates, formatting dates, trimming company names, and addressing missing values.  
-2. **Exploration** → Running basic queries to understand the scale of layoffs (e.g., largest single events, companies with complete workforce cuts).  
-3. **Aggregation** → Summarizing layoffs by year, industry, location, country, and stage to uncover macro trends.  
-4. **Advanced Analytics** → Using window functions, rolling totals, and ranking logic to uncover deeper insights such as top companies per year or cumulative monthly layoffs.  
-
-This project demonstrates how SQL can be used not just for CRUD operations but also for **business intelligence and storytelling with data**.  
-It is an excellent resource for:  
-
-- **SQL learners** → Practice with real-world style queries (from beginner to advanced).  
-- **Data analysts** → Explore patterns, build narratives, and prepare for visualization.  
-- **Researchers / HR professionals** → Understand how workforce reductions vary by sector and geography.  
-
-Ultimately, this project transforms a raw dataset into **meaningful insights** that could feed dashboards, reports, or even predictive models for future workforce planning.
+Pivot tables were created to:  
+- Compare **purchasers vs non-purchasers** by income group.  
+- Summarize purchases by **gender, marital status, and children**.  
+- Analyze **region-wise sales distribution**.  
+- Explore the effect of **education and occupation** on bike buying behavior.  
 
 ---
 
-## 🚀 Features
+## 📊 Dashboard
 
-- **Data Exploration** → Preview and explore the dataset with `SELECT *`.  
-- **Data Cleaning** → Remove duplicates, standardize fields, and fix data types.  
-- **Easier Queries** →  
-  - Find maximum layoffs  
-  - Identify companies with 100% layoffs  
-  - Check percentages and funding details  
-- **Aggregated Insights** →  
-  - Top companies, locations, countries, and industries by layoffs  
-  - Year-wise and stage-wise summaries  
-- **Advanced Analysis** →  
-  - Rolling totals of layoffs by month  
-  - CTEs for cumulative layoffs  
-  - Ranking companies with most layoffs per year (Top 3 each year)  
+An interactive Excel **dashboard** was built (in the “dashboard” sheet) including:  
+- 🚹🚺 **Gender distribution of buyers**  
+- 💰 **Income levels and bike purchases**  
+- 📍 **Regional breakdown**  
+- 🚗 **Commute distance vs purchase decision**  
+- 📈 **Age group comparisons**  
+
+The dashboard enables quick filtering and visualization of key insights.  
 
 ---
 
-## 📂 Dataset
+## 📈 Insights
 
-The dataset is stored in a table called **`standralising`**, containing:
-
-- `company`  
-- `industry`  
-- `total_laid_off`  
-- `percentage_laid_off`  
-- `location`  
-- `country`  
-- `date`  
-- `stage`  
-- `funds_raised`  
+- Higher-income individuals are **more likely** to purchase bikes.  
+- Younger customers (30–45) show the **highest purchase rates**.  
+- **Short commute distances** strongly correlate with bike purchases.  
+- Married individuals and those with fewer children are **slightly more likely** to buy bikes.  
+- Professionals tend to purchase more bikes compared to Clerical/Skilled Manual workers.  
 
 ---
 
-## 🧼 Data Cleaning & Deduplication (SQL)
+## 🧑‍💻 Tech Stack
 
-### 1) Create a staging table
+- **Microsoft Excel** → Data cleaning, analysis, pivot tables  
+- **Excel Dashboards** → Interactive charts and slicers  
 
-```sql
-CREATE TABLE `standralising` LIKE layoffs;
-INSERT `standralising`
-SELECT * FROM layoffs;
-2) Inspect potential duplicates
-sql
-Copy code
-SELECT company, industry, total_laid_off, `date`,
-       ROW_NUMBER() OVER (
-         PARTITION BY company, industry, total_laid_off, `date`
-         ORDER BY company
-       ) AS row_num
-FROM standralising;
-3) Remove duplicate rows
-sql
-Copy code
-SET SQL_SAFE_UPDATES = 0;
+---
 
-DELETE s
-FROM standralising AS s
-JOIN (
-  SELECT company, industry, total_laid_off, `date`, percentage_laid_off, stage, country,
-         ROW_NUMBER() OVER (
-           PARTITION BY company, industry, total_laid_off, `date`
-           ORDER BY company
-         ) AS row_num
-  FROM standralising
-) AS r
-  ON s.company = r.company
- AND s.industry = r.industry
- AND s.total_laid_off = r.total_laid_off
- AND s.`date` = r.`date`
-WHERE r.row_num > 1;
+## 🌟 How to Use
 
-SET SQL_SAFE_UPDATES = 1;
-4) Normalize text fields
-sql
-Copy code
-UPDATE standralising
-SET company = TRIM(company);
-5) Convert date strings to DATE type
-sql
-Copy code
-UPDATE standralising
-SET `date` = STR_TO_DATE(`date`, '%m/%d/%Y');
-6) Identify missing values
-sql
-Copy code
-SELECT *
-FROM standralising
-WHERE total_laid_off IS NULL
-   OR funds_raised IS NULL
-   OR industry IS NULL
-   OR `date` IS NULL;
-🛠️ SQL Queries Breakdown
-🔹 Easier Queries
-sql
-Copy code
--- Maximum layoffs
-SELECT MAX(total_laid_off) FROM standralising;
+1. Download the Excel file from this repository.  
+2. Open it in **Microsoft Excel** (or Google Sheets with limited functionality).  
+3. Explore:  
+   - `bike_buyers` → Raw dataset  
+   - `working sheet` → Cleaned and transformed data  
+   - `pivot table` → Pivot tables for analysis  
+   - `dashboard` → Interactive dashboard  
 
--- Companies with 100% layoffs
-SELECT * FROM standralising WHERE percentage_laid_off = 1;
-🔹 Aggregated Insights
-sql
-Copy code
--- Total layoffs by industry
-SELECT industry, SUM(total_laid_off) AS total_laid_off
-FROM standralising
-GROUP BY industry
-ORDER BY total_laid_off DESC;
+---
 
--- Total layoffs by country
-SELECT country, SUM(total_laid_off) AS total_laid_off
-FROM standralising
-GROUP BY country
-ORDER BY total_laid_off DESC;
-🔹 Advanced Queries
-sql
-Copy code
--- Rolling total of layoffs per month
-WITH DATE_CTE AS 
-(
-  SELECT SUBSTRING(date,1,7) AS dates, SUM(total_laid_off) AS total_laid_off
-  FROM standralising
-  GROUP BY dates
-  ORDER BY dates ASC
-)
-SELECT dates, SUM(total_laid_off) OVER (ORDER BY dates ASC) AS rolling_total_layoffs
-FROM DATE_CTE
-ORDER BY dates ASC;
-📈 Insights You Can Extract
-📌 Largest single-day layoffs by company
+## 📌 Future Improvements
 
-📌 Industries and countries most affected
+- Automate data cleaning with **Power Query**.  
+- Add **predictive modeling** using Python or Power BI.  
+- Extend analysis with **time-series data** if available.  
 
-📌 Year-over-year layoff trends
+---
 
-📌 Top 3 companies per year with the most layoffs
+## 📜 License
 
-📌 Rolling and cumulative totals of layoffs
-
-🧑‍💻 Tech Stack
-SQL (MySQL / PostgreSQL compatible)
-
-Relational Database to store and query data
-
-Queries structured for exploration + insights
-
-📸 Example Output (Optional)
-Add charts or screenshots of query results / dashboards here for better presentation.
-
-🌟 How to Use
-Clone this repo:
-
-bash
-Copy code
-git clone https://github.com/your-username/layoffs-sql-analysis.git
-Import the dataset into your SQL database.
-
-Run queries in your favorite SQL client (MySQL Workbench, DBeaver, pgAdmin, etc.).
-
-Explore, analyze, and derive insights!
-
-📌 Future Improvements
-📊 Add visualizations (Tableau, Power BI, or Python)
-
-⚡ Automate ETL pipeline for updated data
-
-🤖 Extend to predictive analysis with ML models
-
-🤝 Contributing
-Pull requests are welcome!
-For major changes, please open an issue first to discuss what you’d like to change.
+This project is licensed under the **MIT License**.  
